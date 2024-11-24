@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>time picker</title>
+    <style>
+        .time_input_container {
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .time_input {
+            cursor: pointer;
+            justify-content: center; 
+            color: black; 
+            width: 80%; 
+            resize: none; 
+            padding: 10px 10px 10px 10px; 
+            background-color: rgb(237, 236, 236); 
+            border-radius: 10px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            border: 1px solid transparent; 
+            box-shadow: 1px 0 3px rgb(173, 173, 173);
+            text-align: center;
+        }
+        .time_picker {
+            display: none;
+            position: fixed;
+            top: 2%;
+            left: 2%;
+            width: 95vw;
+            height: 650px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background-color: #f5f5f5;
+            z-index: 1000;
+        }
+        .time_picker.show {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .scroll_container {
+            height: 120px;
+            width: 80px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            position: relative;
+            scroll-behavior: smooth;
+            top: 10%;
+        }
+        .scroll_container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scroll_container::-webkit-scrollbar-thumb {
+            background-color: #888;
+            border-radius: 3px;
+        }
+        .number_list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .number_item {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            color: #333;
+        }
+        .number_item:hover {
+            background-color: #f0f0f0;
+        }
+        .number_item.selected {
+            background-color: #e0e0e0;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        .unit {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            top: 10%;
+            position: relative;
+            padding: 10px;
+        }
+        .center_line {
+            position: absolute;
+            width: 100%;
+            height: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            pointer-events: none;
+        }
+        .time_picker_buttons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 5px;
+            width: 100%;
+        }
+        .time_picker_button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .time_picker_pos{
+            display: flex;
+            align-items: center;
+            margin-top: 30px;
+            margin-bottom: 10px;
+        }
+        .confirm_button {
+            background-color: #7EC0EE;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            width: 150px;
+            z-index: 10;
+        }
+        .cancel_button {
+            background-color: #f0f0f0;
+            color: #333;
+            font-size: 20px;
+            font-weight: bold;
+            width: 150px;
+            z-index: 10;
+        }
+        .time_picker_button:hover {
+            opacity: 0.9;
+        }
+
+       .clock {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: transparent;
+        }
+        .clock_hour_pos{
+            width: 350px; 
+            height: 350px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #E3F2FD, #E8F5E9);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .clock_minete_pos{
+            width: 350px; 
+            height: 350px;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #E3F2FD, #E8F5E9);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 立体感 */
+        }
+        .hours_container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            top: 43%;
+            left: 43%;
+        }
+        .hours_container .number_item_2 {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            line-height: 40px;
+            border-radius: 50%;
+            transform-origin: center center;
+            font-size: 24px;
+            z-index: 2;
+        }
+        .minute_container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            top: 43%;
+            left: 43%;
+        }
+        .minute_container .number_item_3 {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            line-height: 40px;
+            border-radius: 50%;
+            transform-origin: center center;
+            font-size: 24px;
+            z-index: 2;
+        }
+        .hand {
+            position: absolute;
+            width: 5px;
+            height: 130px;
+            background: #7EC0EE;
+            top: 7%;
+            left: 49%;
+            transform-origin: bottom center;
+            transform: rotate(0deg);
+            transition: transform 0.3s ease;
+            z-index: 1;
+        }
+        .blue_circle {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background-color: #7EC0EE;
+            border-radius: 50%;
+            top: 47%;
+            left: 47%;
+        }
+        .minute_hand{
+            position: absolute;
+            width: 5px;
+            height: 130px;
+            background: #7EC0EE;
+            top: 7%;
+            left: 49%;
+            transform-origin: bottom center;
+            transform: rotate(0deg);
+            transition: transform 0.3s ease;
+            z-index: 1;
+        }
+        .selected_2 {
+            border: 1px solid #7EC0EE;
+            background: #7EC0EE;
+        }
+    </style>
+</head>
+<body>
+    <div style="width: 100%; display: flex; margin-top: 15px; align-items: left;">
+        <div style="width: 100%; display: flex; margin-left: 20px;">
+            <div class="time_input_container" style="width: 40%;">
+                <input type="text" id="time" name="time" class="time_input" readonly placeholder="時間入力">
+                <div class="time_picker">
+                    <div class="time_picker_pos">
+                        <div class="scroll_container hours">
+                            <div class="center_line"></div>
+                            <ul class="number_list"></ul>
+                        </div>
+                        <span class="unit" id="hour">時</span>
+                        <div class="scroll_container minutes">
+                            <div class="center_line"></div>
+                            <ul class="number_list"></ul>
+                        </div>
+                        <span class="unit">分</span>
+                    </div>
+                    <div style="margin-top: 5px;"></div>
+                    <div class="clock_hour_pos">
+                        <div class="clock">
+                            <ul class="hours_container"></ul>
+                            <div class="hand"></div>
+                            <div class="blue_circle"></div>
+                        </div>
+                    </div>
+                    <div class="clock_minete_pos">
+                        <div class="clock">
+                            <ul class="minute_container"></ul>
+                            <div class="minute_hand"></div>
+                            <div class="blue_circle"></div>
+                        </div>
+                    </div>
+                    <div class="time_picker_buttons">
+                        <button class="time_picker_button cancel_button">キャンセル</button>
+                        <button class="time_picker_button confirm_button">確定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="width: 100%; display: flex; margin-top: 15px; align-items: left;">
+        <div style="width: 100%; display: flex; margin-left: 20px;">
+            <div class="time_input_container" style="width: 40%;">
+                <input type="text" id="time" name="time" class="time_input" readonly placeholder="時間入力">
+                <div class="time_picker">
+                    <div class="time_picker_pos">
+                        <div class="scroll_container hours">
+                            <div class="center_line"></div>
+                            <ul class="number_list"></ul>
+                        </div>
+                        <span class="unit" id="hour">時間</span>
+                        <div class="scroll_container minutes">
+                            <div class="center_line"></div>
+                            <ul class="number_list"></ul>
+                        </div>
+                        <span class="unit">分</span>
+                    </div>
+                    <div style="margin-top: 5px;"></div>
+                    <div class="clock_hour_pos">
+                        <div class="clock">
+                            <ul class="hours_container"></ul>
+                            <div class="hand"></div>
+                            <div class="blue_circle"></div>
+                        </div>
+                    </div>
+                    <div class="clock_minete_pos">
+                        <div class="clock">
+                            <ul class="minute_container"></ul>
+                            <div class="minute_hand"></div>
+                            <div class="blue_circle"></div>
+                        </div>
+                    </div>
+                    <div class="time_picker_buttons">
+                        <button class="time_picker_button cancel_button">キャンセル</button>
+                        <button class="time_picker_button confirm_button">確定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        class TimePicker {
+            constructor(container) {
+                this.container = container;
+                this.input = container.querySelector('.time_input');
+                this.picker = container.querySelector('.time_picker');
+                this.hoursContainer = container.querySelector('.hours .number_list');
+                this.clockHourPos = container.querySelector('.clock_hour_pos');
+                this.minutesContainer = container.querySelector('.minutes .number_list');
+                this.clockMinetePos = container.querySelector('.clock_minete_pos');
+                this.confirmButton = container.querySelector('.confirm_button');
+                this.cancelButton = container.querySelector('.cancel_button');
+
+                this.hoursContainer2 = container.querySelector('.hours_container');
+                this.minutesContainer2 = container.querySelector('.minute_container');
+                this.hand = container.querySelector('.hand');
+                this.minuteHand = container.querySelector('.minute_hand');
+
+                // 初期値の解析、valueが空の場合デフォルトを0時間0分に設定
+                const currentValue = this.input.value || '';
+                const hoursMatch = currentValue.match(/(\d+)時間/);
+                const minutesMatch = currentValue.match(/(\d+)分/);
+                this.selectedHours = hoursMatch ? parseInt(hoursMatch[1]) : 0;
+                this.selectedMinutes = minutesMatch ? parseInt(minutesMatch[1]) : 0;
+
+                //this.display_hour = document.getElementById('hour');
+                this.display_hour = container.querySelector('#hour');
+
+                this.init();
+                this.bindEvents();
+            }
+
+            init() {
+                
+                const radius = 140;
+                const innerRadius = 100;
+                const totalNumbers = 24;
+                for (let i = 0; i < totalNumbers; i++) {
+                    const li = document.createElement('li');
+                    li.className = 'number_item_2';
+                    li.textContent = i.toString().padStart(2, '0');
+
+                    // const angle = (360 / totalNumbers) * i;
+                    // const x = radius * Math.cos((angle - 90) * (Math.PI / 180));
+                    // const y = radius * Math.sin((angle - 90) * (Math.PI / 180));
+                    
+                    const isOuter = i < 12;
+                    const calcRadius = isOuter ? radius : innerRadius;
+                    const segmentIndex = isOuter ? i : i - 12;
+                    const angle = (360 / 12) * segmentIndex;
+                    const x = calcRadius * Math.cos((angle - 90) * (Math.PI / 180));
+                    const y = calcRadius * Math.sin((angle - 90) * (Math.PI / 180));
+
+                    li.style.transform = `translate(${x}px, ${y}px)`;
+                    this.hoursContainer2.appendChild(li);
+
+                    li.addEventListener('click', () => {
+                        document.querySelectorAll('.number_item_2').forEach(item => item.classList.remove('selected_2'));
+                        li.classList.add('selected_2');
+                        this.hand.style.transform = `rotate(${angle}deg)`;
+                        if(i < 12){
+                            this.hand.style.height = '130px';
+                            this.hand.style.top = '7%';
+                        }else{
+                            this.hand.style.height = '100px';
+                            this.hand.style.top = '17%';
+                        }
+                        this.container.querySelectorAll('.scroll_container').forEach(container => {
+                            if (container.classList.contains('hours')) { container.scrollTop = i * 40;}
+                        });
+                    });
+                }
+
+                const totalMinuteNumbers = 12;
+                for (let i = 0; i < totalMinuteNumbers; i++) {
+                    const li = document.createElement('li');
+                    li.className = 'number_item_3';
+                    li.textContent = (i * 5).toString().padStart(2, '0');
+
+                    const angle = (360 / totalMinuteNumbers) * i;
+                    const x = radius * Math.cos((angle - 90) * (Math.PI / 180));
+                    const y = radius * Math.sin((angle - 90) * (Math.PI / 180));
+
+                    li.style.transform = `translate(${x}px, ${y}px)`;
+                    this.minutesContainer2.appendChild(li);
+
+                    li.addEventListener('click', () => {
+                        document.querySelectorAll('.number_item_3').forEach(item => item.classList.remove('selected_2'));
+                        li.classList.add('selected_2');
+                        this.minuteHand.style.transform = `rotate(${angle}deg)`;
+                        this.container.querySelectorAll('.scroll_container').forEach(container => {
+                            if (container.classList.contains('minutes')) { container.scrollTop = i * 40;}
+                        });
+                    });
+                }
+
+                this.clockItems = this.container.querySelectorAll('.number_item_2');
+                this.clockItems3 = this.container.querySelectorAll('.number_item_3');
+
+                // 時間のリストを生成（0-23）
+                for (let i = 0; i < totalNumbers + 2; i++) {
+                    const li = document.createElement('li');
+                    let angle_ro = 0;
+                    const isOuter_ro = i > 0 && i <= 12;
+                    const segmentIndex_ro = isOuter_ro ? i : i - 13;
+                    li.className = 'number_item';
+                    if(i == 0 || i == totalNumbers + 1){
+                        li.textContent =  '';
+                        angle_ro = 0;
+                    }else{
+                        angle_ro = isOuter_ro ? (360 / 12) * (i - 1) : (360 / 12) * (i - 13);
+                        li.textContent = (i - 1).toString().padStart(2, '0');
+                    }
+                    this.hoursContainer.appendChild(li);
+
+                    li.addEventListener('click', () => {
+                        document.querySelectorAll('.number_item_2').forEach(item => item.classList.remove('selected_2'));
+                        if(i == 0 || i == totalNumbers + 1){}
+                        else{
+                            this.clockItems[i - 1].classList.add('selected_2');
+                            if(i < 13){
+                                this.hand.style.height = '130px';
+                                this.hand.style.top = '7%';
+                            }else{
+                                this.hand.style.height = '100px';
+                                this.hand.style.top = '17%';
+                            }
+                            this.container.querySelectorAll('.scroll_container').forEach(container => {
+                                if (container.classList.contains('hours')) { container.scrollTop = (i - 1) * 40;}
+                            });
+                        }
+                        this.hand.style.transform = `rotate(${angle_ro}deg)`;
+                    });
+                }
+
+                // 分のリストを生成（0-59、5分刻み）
+                for (let i = 0; i < totalMinuteNumbers + 2; i++) {
+                    const li = document.createElement('li');
+                    let angle_ro = 0;
+                    li.className = 'number_item';
+                    if(i == 0 || i == totalMinuteNumbers + 1){
+                        li.textContent =  '';
+                        angle_ro = 0;
+                    }else{
+                        li.textContent = ((i - 1) * 5).toString().padStart(2, '0');
+                        angle_ro = (360 / totalMinuteNumbers) * (i - 1);
+                    }
+                    this.minutesContainer.appendChild(li);
+
+                    const angle = (360 / totalMinuteNumbers) * i;
+                    li.addEventListener('click', () => {
+                        document.querySelectorAll('.number_item_3').forEach(item => item.classList.remove('selected_2'));
+                        if(i == 0 || i == totalMinuteNumbers + 1){}
+                        else{
+                            this.clockItems3[i - 1].classList.add('selected_2');
+                            this.container.querySelectorAll('.scroll_container').forEach(container => {
+                                if (container.classList.contains('minutes')) { container.scrollTop = (i - 1) * 40;}
+                            });
+                        }
+                        this.minuteHand.style.transform = `rotate(${angle_ro}deg)`;
+                    });
+                }
+            }
+
+            handleScroll(container) {
+                const items = container.querySelectorAll('.number_item');
+                const containerRect = container.getBoundingClientRect();
+                const centerY = containerRect.top + containerRect.height / 2;
+
+                items.forEach(item => {
+                    const itemRect = item.getBoundingClientRect();
+                    const itemCenterY = itemRect.top + itemRect.height / 2;
+                    const distance = Math.abs(centerY - itemCenterY);
+
+                    if (distance < item.offsetHeight / 2) {
+                        items.forEach(i => i.classList.remove('selected'));
+                        item.classList.add('selected');
+
+                        if (container.classList.contains('hours')) {
+                            this.selectedHours = parseInt(item.textContent);
+                            
+                        } else if (container.classList.contains('minutes')) {
+                            this.selectedMinutes = parseInt(item.textContent);
+                        }
+                    }
+                });
+            }
+
+            showPicker() {
+                // 他の全てのピッカーを閉じる
+                document.querySelectorAll('.time_picker.show').forEach(picker => {
+                    if (picker !== this.picker) {
+                        picker.classList.remove('show');
+                    }
+                });
+
+                this.picker.classList.add('show');
+
+                // 現在の値に基づいて初期位置を設定
+                this.container.querySelectorAll('.scroll_container').forEach(container => {
+                    if (container.classList.contains('hours')) {
+                        container.scrollTop = this.selectedHours * 40;
+                    } else if (container.classList.contains('minutes')) {
+                        container.scrollTop = this.selectedMinutes * 40 / 5; // 5分刻み
+                    }
+                    this.handleScroll(container);
+                });
+            }
+
+            hidePicker() {
+                this.picker.classList.remove('show');
+            }
+
+            confirmSelection() {
+                if(this.display_hour.textContent == '時間'){
+                    this.input.value = `${this.selectedHours.toString().padStart(2, '0')}時間${this.selectedMinutes.toString().padStart(2, '0')}分`;
+                }else{
+                    this.input.value = `${this.selectedHours.toString().padStart(2, '0')}時${this.selectedMinutes.toString().padStart(2, '0')}分`;
+                }
+                this.input.placeholder = ''; // 確定後はプレースホルダーを空に
+                this.hidePicker();
+            }
+
+            bindEvents() {
+                this.input.addEventListener('click', () => this.showPicker());
+                
+                this.hoursContainer.addEventListener('click', () => {
+                    this.clockHourPos.style.display = 'flex';       
+                    this.clockMinetePos.style.display = 'none';
+                });
+                this.minutesContainer.addEventListener('click', () => {
+                    this.clockMinetePos.style.display = 'flex';       
+                    this.clockHourPos.style.display = 'none';
+                });
+
+                this.container.querySelectorAll('.scroll_container').forEach(container => {
+                    container.addEventListener('scroll', () => this.handleScroll(container));
+                });
+
+                this.confirmButton.addEventListener('click', () => this.confirmSelection());
+                this.cancelButton.addEventListener('click', () => this.hidePicker());
+
+                // 外部クリックでピッカーを閉じる
+                document.addEventListener('click', (e) => {
+                    if (!this.input.contains(e.target) && !this.picker.contains(e.target)) {
+                        this.hidePicker();
+                    }
+                });
+            }
+        }
+
+        // 全ての時間選択要素を初期化
+        document.querySelectorAll('.time_input_container').forEach(container => {
+            new TimePicker(container);
+        });
+    </script>
+</body>
+</html>
